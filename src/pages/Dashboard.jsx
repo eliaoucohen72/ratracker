@@ -11,11 +11,19 @@ import ThemeToggle from "../components/dashboard/ThemeToggle";
 
 const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://www.oref.org.il/WarningMessages/alert/alerts.json");
 
+const DEMO_ALERTS = [
+  { id: "demo-1", title: "ירי רקטות ופגזים", data: ["תל אביב", "רמת גן", "גבעתיים"] },
+  { id: "demo-2", title: "ירי רקטות ופגזים", data: ["חיפה", "נתניה", "חדרה"] },
+  { id: "demo-3", title: "חדירת כלי טיס עוין", data: ["ירושלים", "מודיעין"] },
+  { id: "demo-4", title: "ירי רקטות ופגזים", data: ["אשקלון", "אשדוד", "קריית גת"] },
+];
+
 function getTimeString() {
   return new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 export default function Dashboard() {
+  const [isDemo, setIsDemo] = useState(false);
   const [activeAlert, setActiveAlert] = useState(null);
   const [alertStartTime, setAlertStartTime] = useState(null);
   const [history, setHistory] = useState([]);
@@ -24,12 +32,17 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const lastAlertId = useRef(null);
   const liveFetchRef = useRef(null);
+  const demoIndexRef = useRef(0);
+  const activeAlertRef = useRef(null);
+  const alertStartTimeRef = useRef(null);
 
   const processAlert = useCallback((alertData) => {
     if (!alertData || !alertData.data || alertData.data.length === 0) {
-      if (activeAlert && alertStartTime && Date.now() - alertStartTime > 45000) {
+      if (activeAlertRef.current && alertStartTimeRef.current && Date.now() - alertStartTimeRef.current > 45000) {
         setActiveAlert(null);
         setAlertStartTime(null);
+        activeAlertRef.current = null;
+        alertStartTimeRef.current = null;
       }
       return;
     }
@@ -38,8 +51,11 @@ export default function Dashboard() {
 
     if (alertId !== lastAlertId.current) {
       lastAlertId.current = alertId;
+      const now = Date.now();
       setActiveAlert(alertData);
-      setAlertStartTime(Date.now());
+      setAlertStartTime(now);
+      activeAlertRef.current = alertData;
+      alertStartTimeRef.current = now;
       setTotalAlerts((prev) => prev + 1);
       setTotalCities((prev) => prev + alertData.data.length);
       setLastUpdate(getTimeString());
@@ -55,10 +71,12 @@ export default function Dashboard() {
         return [entry, ...prev].slice(0, 20);
       });
     }
-  }, [activeAlert, alertStartTime]);
+  }, []);
 
   // Live polling
   useEffect(() => {
+    if (isDemo) return;
+
     const fetchAlerts = async () => {
       try {
         const response = await fetch(API_URL, {
@@ -81,7 +99,23 @@ export default function Dashboard() {
     fetchAlerts();
     const interval = setInterval(fetchAlerts, 5000);
     return () => clearInterval(interval);
-  }, [processAlert]);
+  }, [processAlert, isDemo]);
+
+  // Demo mode: cycle through fake alerts every 8s
+  useEffect(() => {
+    if (!isDemo) return;
+
+    const runDemo = () => {
+      const alert = DEMO_ALERTS[demoIndexRef.current % DEMO_ALERTS.length];
+      demoIndexRef.current += 1;
+      processAlert({ ...alert, id: alert.id + "-" + demoIndexRef.current });
+      setLastUpdate(getTimeString());
+    };
+
+    runDemo();
+    const interval = setInterval(runDemo, 8000);
+    return () => clearInterval(interval);
+  }, [isDemo, processAlert]);
 
   const handleRefresh = useCallback(() => {
     if (liveFetchRef.current) liveFetchRef.current();
@@ -117,23 +151,39 @@ export default function Dashboard() {
           </div>
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
-            <div className="flex items-center gap-2 bg-emerald-900/30 border border-emerald-700/40 rounded-lg px-3 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-emerald-300 font-inter font-semibold">LIVE</span>
-            </div>
+            <button
+              onClick={() => {
+                setIsDemo((prev) => !prev);
+                setActiveAlert(null);
+                setAlertStartTime(null);
+                setHistory([]);
+                setTotalAlerts(0);
+                setTotalCities(0);
+                lastAlertId.current = null;
+                demoIndexRef.current = 0;
+              }}
+              className="flex items-center gap-2"
+              title={isDemo ? "Switch to Live" : "Switch to Demo"}
+            >
+              <span className={`text-xs font-inter transition-all duration-200 ${isDemo ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>DEMO</span>
+              <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${isDemo ? "bg-yellow-400 dark:bg-yellow-500" : "bg-emerald-400 dark:bg-emerald-500"}`}>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${isDemo ? "translate-x-0" : "translate-x-5"}`} />
+              </div>
+              <span className={`text-xs font-inter transition-all duration-200 ${!isDemo ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>LIVE</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-        <CorsNotice isLive={true} />
+        <CorsNotice isLive={!isDemo} />
         <StatusBanner isActive={isActive} title={activeAlert?.title} />
         <StatsBar
           totalAlerts={totalAlerts}
           totalCities={totalCities}
           lastUpdate={lastUpdate}
-          isLive={true}
+          isLive={!isDemo}
           onRefresh={handleRefresh}
         />
 

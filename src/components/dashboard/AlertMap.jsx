@@ -1,8 +1,35 @@
-import React, { useMemo, useEffect } from "react";
-import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from "react-leaflet";
+import React, { useMemo, useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
 import CITY_COORDS from "../../data/cities_coords.json";
+
+const pinIcon = L.divIcon({
+  className: "",
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+    <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24s16-14 16-24C32 7.163 24.837 0 16 0z"
+      fill="#ef4444" stroke="#fff" stroke-width="2"/>
+    <circle cx="16" cy="16" r="6" fill="#fff"/>
+  </svg>`,
+  iconSize: [32, 40],
+  iconAnchor: [16, 40],
+  tooltipAnchor: [0, -40],
+});
+
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark")
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
+}
 
 const ISRAEL_BOUNDS = [[29.4, 34.2], [33.3, 35.9]];
 
@@ -24,6 +51,7 @@ function extractCityName(label) {
 }
 
 export default function AlertMap({ history }) {
+  const isDark = useDarkMode();
   const recentCityAlerts = useMemo(() => {
     const now = Date.now();
     const cityMap = {};
@@ -70,7 +98,7 @@ export default function AlertMap({ history }) {
         </h2>
         <span className="text-xs text-muted-foreground ml-1">— last 10 minutes</span>
         {markerEntries.length > 0 && (
-          <span className="ml-auto text-xs bg-red-900/50 border border-red-700/40 text-red-300 px-2 py-0.5 rounded-full font-inter">
+          <span className="ml-auto text-xs bg-red-100 border border-red-400/60 text-red-700 dark:bg-red-900/50 dark:border-red-700/40 dark:text-red-300 px-2 py-0.5 rounded-full font-inter">
             {markerEntries.length} cities
           </span>
         )}
@@ -81,13 +109,17 @@ export default function AlertMap({ history }) {
           zoom={7}
           maxBounds={ISRAEL_BOUNDS}
           maxBoundsViscosity={1.0}
-          style={{ height: "100%", width: "100%", background: "#111" }}
+          style={{ height: "100%", width: "100%", background: isDark ? "#111" : "#e8e8e8" }}
           zoomControl={true}
           scrollWheelZoom={true}
         >
           <IsraelBoundsEnforcer />
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            key={isDark ? "dark" : "light"}
+            url={isDark
+              ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            }
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
             subdomains="abcd"
             maxZoom={19}
@@ -95,16 +127,10 @@ export default function AlertMap({ history }) {
           {markerEntries.map(([city, raw]) => {
             const { times, areaname, migun_time } = getInfo(raw);
             return (
-              <CircleMarker
+              <Marker
                 key={city}
-                center={CITY_COORDS[city]}
-                radius={10}
-                pathOptions={{
-                  color: "#ef4444",
-                  fillColor: "#ef4444",
-                  fillOpacity: 0.85,
-                  weight: 2,
-                }}
+                position={CITY_COORDS[city]}
+                icon={pinIcon}
               >
                 <Tooltip direction="bottom" offset={[0, 8]} opacity={1}>
                   <div dir="rtl" style={{ fontFamily: "'Heebo', sans-serif", minWidth: 130 }}>
@@ -124,7 +150,7 @@ export default function AlertMap({ history }) {
                     ))}
                   </div>
                 </Tooltip>
-              </CircleMarker>
+              </Marker>
             );
           })}
         </MapContainer>

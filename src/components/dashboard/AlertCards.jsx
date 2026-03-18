@@ -35,8 +35,8 @@ export default function AlertCards({ cities, startTime, timeToRun = 45, desc }) 
         isExpired
           ? "bg-secondary border-border opacity-60"
           : isUrgent
-            ? "bg-red-950/80 border-red-600 animate-pulse-red"
-            : "bg-orange-950/60 border-orange-600/70"
+            ? "bg-red-100 border-red-500 dark:bg-red-950/80 dark:border-red-600 animate-pulse-red"
+            : "bg-orange-100 border-orange-400 dark:bg-orange-950/60 dark:border-orange-600/70"
       }`}
     >
       {/* Progress bar */}
@@ -69,8 +69,8 @@ export default function AlertCards({ cities, startTime, timeToRun = 45, desc }) 
               isExpired
                 ? "text-muted-foreground"
                 : isUrgent
-                  ? "text-red-400"
-                  : "text-orange-300"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-orange-600 dark:text-orange-300"
             }`}
           >
             {isExpired ? "00" : String(secondsLeft).padStart(2, "0")}
@@ -86,8 +86,8 @@ export default function AlertCards({ cities, startTime, timeToRun = 45, desc }) 
             key={city}
             className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm border ${
               isUrgent
-                ? "bg-red-900/40 border-red-700/50"
-                : "bg-black/25 border-orange-700/30"
+                ? "bg-red-200/60 border-red-400/60 dark:bg-red-900/40 dark:border-red-700/50"
+                : "bg-orange-200/50 border-orange-400/40 dark:bg-black/25 dark:border-orange-700/30"
             }`}
           >
             <MapPin
