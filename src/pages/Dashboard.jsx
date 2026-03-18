@@ -3,23 +3,99 @@ import StatusBanner from "../components/dashboard/StatusBanner";
 import AlertCards from "../components/dashboard/AlertCards";
 import AlertHistory from "../components/dashboard/AlertHistory";
 import StatsBar from "../components/dashboard/StatsBar";
-import CorsNotice from "../components/dashboard/CorsNotice";
 import AlertMap from "../components/dashboard/AlertMap";
 import CityStats from "../components/dashboard/CityStats";
 import { Shield } from "lucide-react";
 import ThemeToggle from "../components/dashboard/ThemeToggle";
+import { cityByName, cityCountdown } from "../data/cityUtils";
 
-const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://www.oref.org.il/WarningMessages/alert/alerts.json");
+const API_URL = "/api/alerts";
 
+// Demo alerts — one entry per pikud-haoref-api alert type for a full overview
 const DEMO_ALERTS = [
-  { id: "demo-1", title: "ירי רקטות ופגזים", data: ["תל אביב", "רמת גן", "גבעתיים"] },
-  { id: "demo-2", title: "ירי רקטות ופגזים", data: ["חיפה", "נתניה", "חדרה"] },
-  { id: "demo-3", title: "חדירת כלי טיס עוין", data: ["ירושלים", "מודיעין"] },
-  { id: "demo-4", title: "ירי רקטות ופגזים", data: ["אשקלון", "אשדוד", "קריית גת"] },
+  {
+    id: "demo-missiles",
+    type: "missiles",
+    cities: ["תל אביב - מרכז", "רמת גן", "גבעתיים", "בת ים", "חולון"],
+    instructions: "ירי רקטות ופגזים",
+  },
+  {
+    id: "demo-aircraft",
+    type: "hostileAircraftIntrusion",
+    cities: ["חיפה - כרמל", "חיפה - נמל", "קריית ביאליק"],
+    instructions: "חדירת כלי טיס עוין",
+  },
+  {
+    id: "demo-infiltration",
+    type: "terroristInfiltration",
+    cities: ["שדרות", "נתיבות", "אופקים"],
+    instructions: "חדירת מחבלים",
+  },
+  {
+    id: "demo-earthquake",
+    type: "earthQuake",
+    cities: ["ירושלים - מרכז", "מודיעין", "בית שמש", "רמלה"],
+    instructions: "רעידת אדמה",
+  },
+  {
+    id: "demo-tsunami",
+    type: "tsunami",
+    cities: ["אילת", "עקבה"],
+    instructions: "צונאמי",
+  },
+  {
+    id: "demo-radiological",
+    type: "radiologicalEvent",
+    cities: ["דימונה", "ירוחם", "באר שבע - מרכז"],
+    instructions: "אירוע רדיולוגי",
+  },
+  {
+    id: "demo-hazmat",
+    type: "hazardousMaterials",
+    cities: ["אשדוד - דרום", "אשקלון - צפון", "קריית גת"],
+    instructions: "חומרים מסוכנים",
+  },
+  {
+    id: "demo-general",
+    type: "general",
+    cities: ["נתניה", "חדרה", "זכרון יעקב"],
+    instructions: "הנחיות כלליות",
+  },
+  {
+    id: "demo-newsflash",
+    type: "newsFlash",
+    cities: ["כל הארץ"],
+    instructions: "עדכון חשוב",
+  },
+  {
+    id: "demo-drill-missiles",
+    type: "missilesDrill",
+    cities: ["תל אביב - מרכז", "רמת השרון", "הרצליה"],
+    instructions: "תרגיל ירי רקטות ופגזים",
+  },
+  {
+    id: "demo-drill-earthquake",
+    type: "earthQuakeDrill",
+    cities: ["ירושלים - מרכז", "בית שמש"],
+    instructions: "תרגיל רעידת אדמה",
+  },
 ];
 
 function getTimeString() {
   return new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+// Enrich raw city name strings with metadata from our cities database
+function enrichCities(cityNames) {
+  return cityNames.map((name) => {
+    const meta = cityByName[name];
+    return {
+      name,
+      countdown: cityCountdown[name] ?? 45,
+      zone: meta?.zone ?? null,
+      zone_en: meta?.zone_en ?? null,
+    };
+  });
 }
 
 export default function Dashboard() {
@@ -37,12 +113,18 @@ export default function Dashboard() {
   const alertStartTimeRef = useRef(null);
 
   const processAlert = useCallback((alertData) => {
-    if (!alertData || !alertData.data || alertData.data.length === 0) {
-      if (activeAlertRef.current && alertStartTimeRef.current && Date.now() - alertStartTimeRef.current > 45000) {
-        setActiveAlert(null);
-        setAlertStartTime(null);
-        activeAlertRef.current = null;
-        alertStartTimeRef.current = null;
+    if (!alertData || !alertData.cities || alertData.cities.length === 0) {
+      if (activeAlertRef.current && alertStartTimeRef.current) {
+        const maxCountdown = Math.max(
+          ...enrichCities(activeAlertRef.current.cities ?? []).map((c) => c.countdown),
+          45
+        );
+        if (Date.now() - alertStartTimeRef.current > maxCountdown * 1000) {
+          setActiveAlert(null);
+          setAlertStartTime(null);
+          activeAlertRef.current = null;
+          alertStartTimeRef.current = null;
+        }
       }
       return;
     }
@@ -52,19 +134,23 @@ export default function Dashboard() {
     if (alertId !== lastAlertId.current) {
       lastAlertId.current = alertId;
       const now = Date.now();
-      setActiveAlert(alertData);
+      const enriched = enrichCities(alertData.cities);
+      const enrichedAlert = { ...alertData, enrichedCities: enriched };
+
+      setActiveAlert(enrichedAlert);
       setAlertStartTime(now);
-      activeAlertRef.current = alertData;
+      activeAlertRef.current = enrichedAlert;
       alertStartTimeRef.current = now;
       setTotalAlerts((prev) => prev + 1);
-      setTotalCities((prev) => prev + alertData.data.length);
+      setTotalCities((prev) => prev + alertData.cities.length);
       setLastUpdate(getTimeString());
 
       setHistory((prev) => {
         const entry = {
           id: alertId,
-          title: alertData.title,
-          cities: alertData.data,
+          title: alertData.instructions,
+          type: alertData.type,
+          cities: alertData.cities,
           time: getTimeString(),
           timestamp: Date.now(),
         };
@@ -73,24 +159,26 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Live polling
+  // Live polling from local Express server
   useEffect(() => {
     if (isDemo) return;
 
     const fetchAlerts = async () => {
       try {
-        const response = await fetch(API_URL, {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        const text = await response.text();
-        if (!text || text.trim() === "" || text.trim() === "{}") {
+        const response = await fetch(API_URL);
+        const { alerts, error } = await response.json();
+
+        if (error) {
+          console.warn("[Dashboard] Server-side alert fetch error:", error);
+        }
+
+        if (!alerts || alerts.length === 0) {
           processAlert(null);
         } else {
-          const data = JSON.parse(text);
-          processAlert(data);
+          processAlert(alerts[0]);
         }
       } catch (err) {
-        console.log("Fetch error (CORS may be blocking):", err.message);
+        console.log("Fetch error:", err.message);
       }
       setLastUpdate(getTimeString());
     };
@@ -121,15 +209,19 @@ export default function Dashboard() {
     if (liveFetchRef.current) liveFetchRef.current();
   }, []);
 
-  // Clear active alert after 45s
+  // Clear active alert after max countdown for the alert's cities
   useEffect(() => {
-    if (!alertStartTime) return;
+    if (!alertStartTime || !activeAlert) return;
+    const maxCountdown = Math.max(
+      ...(activeAlert.enrichedCities ?? []).map((c) => c.countdown),
+      45
+    );
     const timeout = setTimeout(() => {
       setActiveAlert(null);
       setAlertStartTime(null);
-    }, 46000);
+    }, (maxCountdown + 1) * 1000);
     return () => clearTimeout(timeout);
-  }, [alertStartTime]);
+  }, [alertStartTime, activeAlert]);
 
   const isActive = !!activeAlert;
 
@@ -177,8 +269,11 @@ export default function Dashboard() {
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-        <CorsNotice isLive={!isDemo} />
-        <StatusBanner isActive={isActive} title={activeAlert?.title} />
+        <StatusBanner
+          isActive={isActive}
+          title={activeAlert?.instructions}
+          alertType={activeAlert?.type}
+        />
         <StatsBar
           totalAlerts={totalAlerts}
           totalCities={totalCities}
@@ -188,7 +283,11 @@ export default function Dashboard() {
         />
 
         {isActive && (
-          <AlertCards cities={activeAlert.data} startTime={alertStartTime} desc={undefined} />
+          <AlertCards
+            cities={activeAlert.enrichedCities}
+            startTime={alertStartTime}
+            alertType={activeAlert.type}
+          />
         )}
 
         <AlertMap history={history} />

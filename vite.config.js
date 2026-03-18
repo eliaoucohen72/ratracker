@@ -14,16 +14,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Any request to /api/oref/* is forwarded to the real Pikud Ha'Oref API
-      // The browser talks to localhost → no CORS issue
-      '/api/oref': {
-        target: 'https://www.oref.org.il',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/oref/, ''),
-        headers: {
-          'Referer': 'https://www.oref.org.il/',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+      // Forward all /api/* requests to the local Express server (ratracker-server)
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: false,
       },
     },
   },

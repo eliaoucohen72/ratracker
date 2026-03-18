@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Timer, MapPin } from "lucide-react";
 
-export default function CityCard({ city, startTime }) {
-  const [secondsLeft, setSecondsLeft] = useState(45);
+export default function CityCard({ city, startTime, countdown = 45 }) {
+  const [secondsLeft, setSecondsLeft] = useState(countdown);
 
   useEffect(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const initial = Math.max(45 - elapsed, 0);
+    const initial = Math.max(countdown - elapsed, 0);
     setSecondsLeft(initial);
 
     if (initial <= 0) return;
@@ -22,7 +22,7 @@ export default function CityCard({ city, startTime }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, countdown]);
 
   const isUrgent = secondsLeft <= 15;
   const isExpired = secondsLeft === 0;
@@ -45,7 +45,7 @@ export default function CityCard({ city, startTime }) {
           className={`absolute top-0 left-0 h-1 transition-all duration-1000 ${
             isUrgent ? "bg-red-500" : "bg-orange-500"
           }`}
-          style={{ width: `${(secondsLeft / 45) * 100}%` }}
+          style={{ width: `${(secondsLeft / countdown) * 100}%` }}
         />
       )}
 

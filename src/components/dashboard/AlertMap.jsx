@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet"
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
-import CITY_COORDS from "../../data/cities_coords.json";
+import { cityCoords as CITY_COORDS } from "../../data/cityUtils";
 
 const pinIcon = L.divIcon({
   className: "",
@@ -90,7 +90,7 @@ export default function AlertMap({ history }) {
   const getInfo = (val) => Array.isArray(val) ? { times: val, areaname: null, migun_time: null } : val;
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
+    <div className="rounded-xl border border-border overflow-hidden isolate">
       <div className="flex items-center gap-2 bg-card px-4 py-3 border-b border-border">
         <MapPin className="w-4 h-4 text-primary" />
         <h2 className="text-sm font-inter font-bold text-foreground">

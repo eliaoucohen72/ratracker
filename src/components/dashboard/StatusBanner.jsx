@@ -1,15 +1,27 @@
 import React from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { getAlertType } from "../../data/alertTypes";
 
-export default function StatusBanner({ isActive, title }) {
+export default function StatusBanner({ isActive, title, alertType }) {
   if (isActive) {
+    const typeConfig = getAlertType(alertType);
+    const displayTitle = title || typeConfig.label;
+
     return (
-      <div className="animate-pulse-red animate-flash rounded-xl bg-red-700 border border-red-500 p-5 flex items-center justify-center gap-4" dir="rtl">
+      <div
+        className="animate-pulse-red animate-flash rounded-xl bg-red-700 border border-red-500 p-5 flex items-center justify-center gap-4"
+        dir="rtl"
+      >
         <AlertTriangle className="w-8 h-8 text-white animate-bounce" />
         <div className="text-center">
           <p className="text-white font-heebo font-black text-2xl md:text-3xl tracking-wide">
-            🚨 {title || "ירי רקטות וטילים"} 🚨
+            🚨 {displayTitle} 🚨
           </p>
+          {typeConfig.isDrill && (
+            <span className="inline-block text-xs bg-white/20 text-white px-2 py-0.5 rounded mb-1 font-inter">
+              DRILL / תרגיל
+            </span>
+          )}
           <p className="text-red-200 font-heebo text-sm mt-1">היכנסו למרחב המוגן!</p>
         </div>
         <AlertTriangle className="w-8 h-8 text-white animate-bounce" />
