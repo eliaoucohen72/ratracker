@@ -7,8 +7,9 @@ import CorsNotice from "../components/dashboard/CorsNotice";
 import AlertMap from "../components/dashboard/AlertMap";
 import CityStats from "../components/dashboard/CityStats";
 import { Shield } from "lucide-react";
+import ThemeToggle from "../components/dashboard/ThemeToggle";
 
-const API_URL = "/api/oref/WarningMessages/alert/alerts.json";
+const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://www.oref.org.il/WarningMessages/alert/alerts.json");
 
 function getTimeString() {
   return new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -114,9 +115,12 @@ export default function Dashboard() {
               Israel Missile Alert Dashboard — Live
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2 bg-emerald-900/30 border border-emerald-700/40 rounded-lg px-3 py-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-emerald-300 font-inter font-semibold">LIVE</span>
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
+            <div className="flex items-center gap-2 bg-emerald-900/30 border border-emerald-700/40 rounded-lg px-3 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-emerald-300 font-inter font-semibold">LIVE</span>
+            </div>
           </div>
         </div>
       </header>
@@ -134,7 +138,7 @@ export default function Dashboard() {
         />
 
         {isActive && (
-          <AlertCards cities={activeAlert.data} startTime={alertStartTime} />
+          <AlertCards cities={activeAlert.data} startTime={alertStartTime} desc={undefined} />
         )}
 
         <AlertMap history={history} />

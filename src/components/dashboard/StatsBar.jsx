@@ -22,16 +22,16 @@ export default function StatsBar({ totalAlerts, totalCities, lastUpdate, isLive,
         icon={Activity}
         label="Total Alerts"
         value={totalAlerts}
-        color="bg-red-900/50 text-red-400"
+        color="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400"
       />
       <StatItem
         icon={Target}
         label="Cities Targeted"
         value={totalCities}
-        color="bg-orange-900/50 text-orange-400"
+        color="bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400"
       />
       <div className="flex items-center gap-3 bg-secondary/50 rounded-lg border border-border px-4 py-3">
-        <div className="p-2 rounded-lg bg-blue-900/50 text-blue-400">
+        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
           <Clock className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
@@ -50,7 +50,7 @@ export default function StatsBar({ totalAlerts, totalCities, lastUpdate, isLive,
         icon={Radio}
         label="Mode"
         value={isLive ? "LIVE" : "DEMO"}
-        color={isLive ? "bg-emerald-900/50 text-emerald-400" : "bg-purple-900/50 text-purple-400"}
+        color={isLive ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400" : "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"}
       />
     </div>
   );

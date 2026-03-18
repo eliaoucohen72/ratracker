@@ -18,12 +18,12 @@ export default function StatusBanner({ isActive, title }) {
   }
 
   return (
-    <div className="rounded-xl bg-emerald-900/40 border border-emerald-700/50 p-5 flex items-center justify-center gap-3">
-      <ShieldCheck className="w-7 h-7 text-emerald-400" />
-      <p className="text-emerald-300 font-inter font-semibold text-lg md:text-xl">
+    <div className="rounded-xl bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-400 dark:border-emerald-700/50 p-5 flex items-center justify-center gap-3">
+      <ShieldCheck className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+      <p className="text-emerald-700 dark:text-emerald-300 font-inter font-semibold text-lg md:text-xl">
         No active alerts — All clear
       </p>
-      <span className="text-emerald-400 font-heebo text-lg">אין התרעות</span>
+      <span className="text-emerald-600 dark:text-emerald-400 font-heebo text-lg">אין התרעות</span>
     </div>
   );
 }
